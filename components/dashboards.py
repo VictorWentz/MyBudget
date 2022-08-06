@@ -101,7 +101,7 @@ layout = dbc.Col([
                     style={'z-index': '100'}
                 )
 
-            ], style={'margin': '10px', 'height': '100%', 'padding': '20px'})
+            ], style={'height': '100%', 'padding': '20px'})
 
         ],width=4),
 
@@ -115,9 +115,9 @@ layout = dbc.Col([
 
     # Terceira Linha
     dbc.Row([
-        dbc.Col([dcc.Graph(id='graph-time-dash', style={'padding':'10px'})], width=6),
-        dbc.Col([dcc.Graph(id='graph-pie-dash-receita', style={'padding':'10px'})], width=3),
-        dbc.Col([dcc.Graph(id='graph-pie-dash-despesa', style={'padding':'10px'})], width=3),
+        dbc.Col([dbc.Card(dcc.Graph(id='graph-time-dash', style={'padding':'10px'}))], width=6),
+        dbc.Col([dbc.Card(dcc.Graph(id='graph-pie-dash-receita', style={'padding':'10px'}))], width=3),
+        dbc.Col([dbc.Card(dcc.Graph(id='graph-pie-dash-despesa', style={'padding':'10px'}))], width=3),
     ])
 
 ])

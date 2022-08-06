@@ -17,7 +17,7 @@ import pandas as pd
 
 
 # ========= Layout ========= #
-layout = dbc.Col([
+layout = dbc.Card([
     # HEAD
     html.H1('MyBudget', className='text-primary'),
     html.P('By: Victor Wentz', className='text-info'),
