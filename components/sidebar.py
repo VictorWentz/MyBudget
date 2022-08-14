@@ -102,7 +102,10 @@ layout = dbc.Card([
                             dbc.Col([
                                 html.Legend('Excluir Categoria', style={'color': 'red'}),
                                 dbc.Checklist(id='checklist-selected-receita',
-                                options=[], value=[], label_checked_style={'color': 'red'}, input_checked_style={'background': 'blue', 'borderColor': 'orange'}),
+                                options=[{'label': i, 'value':i} for i in cat_receita],
+                                value=[],
+                                label_checked_style={'color': 'red'}, 
+                                input_checked_style={'background': 'blue', 'borderColor': 'orange'}),
                                 dbc.Button('Remover', color='warning', id='remove-category-receita', style={'margin-top': '20px'})
                             ], width=6)
                         ])
@@ -172,7 +175,10 @@ layout = dbc.Card([
                             dbc.Col([
                                 html.Legend('Excluir Categoria', style={'color': 'red'}),
                                 dbc.Checklist(id='checklist-selected-despesa',
-                                options=[], value=[], label_checked_style={'color': 'red'}, input_checked_style={'background': 'blue', 'borderColor': 'orange'}),
+                                options=[{'label': i, 'value':i} for i in cat_despesa], 
+                                value=[], 
+                                label_checked_style={'color': 'red'}, 
+                                input_checked_style={'background': 'blue', 'borderColor': 'orange'}),
                                 dbc.Button('Remover', color='warning', id='remove-category-despesa', style={'margin-top': '20px'})
                             ], width=6)
                         ])
@@ -287,3 +293,89 @@ def save_form_despesa(n_clicks, description, value, date, switches, category, di
     data_return = df_despesa.to_dict()
 
     return data_return
+
+
+# Add/Remove categoria despesa
+@app.callback(
+    [Output("category-div-add-despesa", "children"),
+    Output("category-div-add-despesa", "style"),
+    Output("select-despesa", "options"),
+    Output('checklist-selected-despesa', 'options'),
+    Output('checklist-selected-despesa', 'value'),
+    Output('store-cat-despesas', 'data')],
+    [Input("add-category-despesa", "n_clicks"),
+    Input("remove-category-despesa", 'n_clicks')],
+    [State("input-add-despesa", "value"),
+    State('checklist-selected-despesa', 'value'),
+    State('store-cat-despesas', 'data')]
+)
+def add_category(n, n2, txt, check_delete, data):
+    cat_despesa = list(data["Categoria"].values())
+
+    txt1 = []
+    style1 = {}
+
+    if n:
+        if txt == "" or txt == None:
+            txt1 = "O campo de texto não pode estar vazio para o registro de uma nova categoria."
+            style1 = {'color': 'red'}
+
+        else:
+            cat_despesa = cat_despesa + [txt] if txt not in cat_despesa else cat_despesa
+            txt1 = f'A categoria {txt} foi adicionada com sucesso!'
+            style1 = {'color': 'green'}
+    
+    if n2:
+        if len(check_delete) > 0:
+            cat_despesa = [i for i in cat_despesa if i not in check_delete]  
+    
+    opt_despesa = [{"label": i, "value": i} for i in cat_despesa]
+    df_cat_despesa = pd.DataFrame(cat_despesa, columns=['Categoria'])
+    df_cat_despesa.to_csv("df_cat_despesa.csv")
+    data_return = df_cat_despesa.to_dict()
+
+    return [txt1, style1, opt_despesa, opt_despesa, [], data_return]
+
+
+# Add/Remove categoria receita
+@app.callback(
+    [Output("category-div-add-receita", "children"),
+    Output("category-div-add-receita", "style"),
+    Output("select-receita", "options"),
+    Output('checklist-selected-receita', 'options'),
+    Output('checklist-selected-receita', 'value'),
+    Output('store-cat-receitas', 'data')],
+    [Input("add-category-receita", "n_clicks"),
+    Input("remove-category-receita", 'n_clicks')],
+    [State("input-add-receita", "value"),
+    State('checklist-selected-receita', 'value'),
+    State('store-cat-receitas', 'data')]
+)
+def add_category(n, n2, txt, check_delete, data):
+    cat_receita = list(data["Categoria"].values())
+
+    txt1 = []
+    style1 = {}
+
+    if n:
+        if txt == "" or txt == None:
+            txt1 = "O campo de texto não pode estar vazio para o registro de uma nova categoria."
+            style1 = {'color': 'red'}
+
+    if n and not(txt == "" or txt == None):
+        cat_receita = cat_receita + [txt] if txt not in cat_receita else cat_receita
+        txt1 = f'A categoria {txt} foi adicionada com sucesso!'
+        style1 = {'color': 'green'}
+    
+    if n2:
+        if check_delete == []:
+            pass
+        else:
+            cat_receita = [i for i in cat_receita if i not in check_delete]  
+    
+    opt_receita = [{"label": i, "value": i} for i in cat_receita]
+    df_cat_receita = pd.DataFrame(cat_receita, columns=['Categoria'])
+    df_cat_receita.to_csv("df_cat_receita.csv")
+    data_return = df_cat_receita.to_dict()
+
+    return [txt1, style1, opt_receita, opt_receita, [], data_return]
