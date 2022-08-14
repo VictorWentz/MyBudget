@@ -11,6 +11,8 @@ import plotly.express as px
 import numpy as np
 import pandas as pd
 
+from dados.data_creation import *
+
 
 
 
@@ -68,13 +70,20 @@ layout = dbc.Card([
                     style={'width': '100%'}),    
                 ], width=4),
                 dbc.Col([
-                    dbc.Label('Extras'),
-                    dbc.Checklist(id = 'switches-input-receita',
-                    options=[], value=[], switch=True)
+                    dbc.Label("Opções Extras"),
+                    dbc.Checklist(
+                        options=[{'label': 'Foi recebida', 'value': 1},
+                                {'label': 'Receita Recorrente', 'value': 2}],
+                        value=[1],
+                        id="switches-input-receita",
+                        switch=True),
                 ], width=4),
                 dbc.Col([
                     html.Label('Categoria da Receita'),
-                    dbc.Select(id='select-receita', options=[], value=[])
+                    dbc.Select(id='select-receita',
+                     options=[{'label': i , 'value': i} for i in cat_receita],
+                    value=cat_receita[0
+                    ])
                 ], width=4)
                 
             ], style={'margin-top': '25px'}),
@@ -132,13 +141,19 @@ layout = dbc.Card([
                     style={'width': '100%'}),    
                 ], width=4),
                 dbc.Col([
-                    dbc.Label('Extras'),
-                    dbc.Checklist(id = 'switches-input-despesa',
-                    options=[], value=[], switch=True)
+                    dbc.Label("Opções Extras"),
+                    dbc.Checklist(
+                        options=[{'label': 'Foi recebida', 'value': 1},
+                                {'label': 'Receita Recorrente', 'value': 2}],
+                        value=[1],
+                        id="switches-input-despesa",
+                        switch=True)
                 ], width=4),
                 dbc.Col([
                     html.Label('Categoria da despesa'),
-                    dbc.Select(id='select-despesa', options=[], value=[])
+                    dbc.Select(id='select-despesa',
+                     options=[{'label': i, 'value': i} for i in cat_despesa], 
+                     value=cat_despesa[0])
                 ], width=4)
                 
             ], style={'margin-top': '25px'}),
@@ -202,3 +217,73 @@ def toggle_modal(n1, is_open):
 def toggle_modal(n1, is_open):
     if n1:
         return not is_open
+
+
+# RECEITAS
+@app.callback(
+    Output('store-receitas', 'data'),
+    Input('salvar-receita', 'n_clicks'),
+    [
+        State("txt-receita", "value"),
+        State("valor-receita", "value"),
+        State("date-receita", "date"),
+        State("switches-input-receita", "value"),
+        State("select-receita", "value"),
+        State('store-receitas', 'data')
+
+    ]
+)
+def save_form_recipe(n_clicks, description, value, date, switches, category, dict_recipe):
+
+    df_receitas = pd.DataFrame(dict_recipe)
+
+    # Faz o callback não ser executado na primeira vez que roda
+    if n_clicks and not (value == '' or value is None):
+        value = round(float(value), 2)
+        date = pd.to_datetime(date).date()
+        cat = category[0] if type(category) == list else category
+        recebido = 1 if 1 in switches else 0
+        fixo = 1 if 2 in switches else 0
+
+        # Adiciona item
+        df_receitas.loc[df_receitas.shape[0]] = [value, recebido, fixo, date, cat, description]
+        df_receitas.to_csv('df_receitas.csv')
+
+    data_return = df_receitas.to_dict()
+
+    return data_return
+
+
+# DESPESAS
+@app.callback(
+    Output('store-despesas', 'data'),
+    Input('salvar-despesa', 'n_clicks'),
+    [
+        State("txt-despesa", "value"),
+        State("valor-despesa", "value"),
+        State("date-despesa", "date"),
+        State("switches-input-despesa", "value"),
+        State("select-despesa", "value"),
+        State('store-despesas', 'data')
+
+    ]
+)
+def save_form_despesa(n_clicks, description, value, date, switches, category, dict_despesa):
+
+    df_despesa = pd.DataFrame(dict_despesa)
+
+    # Faz o callback não ser executado na primeira vez que roda
+    if n_clicks and not (value == '' or value is None):
+        value = round(float(value), 2)
+        date = pd.to_datetime(date).date()
+        cat = category[0] if type(category) == list else category
+        recebido = 1 if 1 in switches else 0
+        fixo = 1 if 2 in switches else 0
+
+        # Adiciona item
+        df_despesa.loc[df_despesa.shape[0]] = [value, recebido, fixo, date, cat, description]
+        df_despesa.to_csv('df_despesas.csv')
+
+    data_return = df_despesa.to_dict()
+
+    return data_return
