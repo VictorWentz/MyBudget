@@ -347,7 +347,7 @@ def add_category(n, n2, txt, check_delete, data):
     Output('store-cat-receitas', 'data')],
     [Input("add-category-receita", "n_clicks"),
     Input("remove-category-receita", 'n_clicks')],
-    [State("input-add-receita", "value"),
+    [State("input-add-category", "value"),
     State('checklist-selected-receita', 'value'),
     State('store-cat-receitas', 'data')]
 )

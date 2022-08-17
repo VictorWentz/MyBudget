@@ -17,6 +17,8 @@ card_icon = {
     'margin': 'auto'
 }
 
+graph_margin = dict(l=25, r=25, t=25, b=0)
+
 # =========  Layout  =========== #
 layout = dbc.Col([
     # Primeira Linha
@@ -39,7 +41,7 @@ layout = dbc.Col([
             dbc.CardGroup([
                 dbc.Card([
                     html.Legend('Receita'),
-                    html.H5('R$ 10000', id='p-receita-dashboard', style={})
+                    html.H5('R$ 10000', id='p-receita-dashboards', style={})
                 ], style={'padding-left': '20px', 'padding-top': '10px'}),
                 dbc.Card([
                     html.Div(className='fa fa-smile-o', style=card_icon),
@@ -52,7 +54,7 @@ layout = dbc.Col([
             dbc.CardGroup([
                 dbc.Card([
                     html.Legend('Despesa'),
-                    html.H5('R$ 5000', id='p-despesa-dashboard', style={})
+                    html.H5('R$ 5000', id='p-despesa-dashboards', style={})
                 ], style={'padding-left': '20px', 'padding-top': '10px'}),
                 dbc.Card([
                     html.Div(className='fa fa-meh-o', style=card_icon),
@@ -81,7 +83,7 @@ layout = dbc.Col([
                 html.Label('Categorias das Despesas', style={'margin-top': '10px'}),
                 html.Div(
                     dcc.Dropdown(
-                        id='dropdown-despesas',
+                        id='dropdown-despesa',
                         clearable=False,
                         style={'width': '100%'},
                         persistence=True,
@@ -124,3 +126,86 @@ layout = dbc.Col([
 
 
 # =========  Callbacks  =========== #
+# RECEITA
+@app.callback(
+    [
+        Output('dropdown-receita', 'options'),
+        Output('dropdown-receita', 'value'),
+        Output('p-receita-dashboards', 'children')
+    ],
+    Input('store-receitas', 'data')
+)
+def populate_dropdownvalues(data):
+    df = pd.DataFrame(data)
+    valor = df['Valor'].sum()
+    val = df.Categoria.unique().tolist()
+
+    return ([{'label': x, 'value': x} for x in val], val, f'R$ {valor}')
+
+# DESPESA
+@app.callback(
+    [
+        Output('dropdown-despesa', 'options'),
+        Output('dropdown-despesa', 'value'),
+        Output('p-despesa-dashboards', 'children')
+    ],
+    Input('store-despesas', 'data')
+)
+def populate_dropdownvalues(data):
+    df = pd.DataFrame(data)
+    valor = df['Valor'].sum()
+    val = df.Categoria.unique().tolist()
+
+    return ([{'label': x, 'value': x} for x in val], val, f'R$ {valor}')
+
+
+# SALDO
+@app.callback(
+    Output('p-saldo-dashboard', 'children'),
+    [
+        Input('store-despesas', 'data'),
+        Input('store-receitas', 'data')
+    ]
+)
+def saldo_total(despesas, receitas):
+    df_despesa = pd.DataFrame(despesas)
+    df_receita = pd.DataFrame(receitas)
+
+    valor = df_receita['Valor'].sum() - df_despesa['Valor'].sum()
+
+    return f'R$ {valor}'
+
+
+# PRIMEIRA FIGURA
+@app.callback(
+    Output('graph-line-dash', 'figure'),
+    [
+        Input('store-despesas', 'data'),
+        Input('store-receitas', 'data'),
+        Input('dropdown-despesa', 'value'),
+        Input('dropdown-receita', 'value'),
+
+    ]
+)
+def update_graph_line(data_despesa, data_receitas, cat_despesa, cat_receita):
+    
+    df_despesas = pd.DataFrame(data_despesa).set_index('Data')[['Valor']]
+    df_receitas = pd.DataFrame(data_receitas).set_index('Data')[['Valor']]
+
+    df_ds = df_despesas.groupby('Data').sum().rename(columns={'Valor': 'Despesas'})
+    df_rc = df_receitas.groupby('Data').sum().rename(columns={'Valor': 'Receitas'})
+
+    df_acum = df_ds.join(df_rc, how='outer').fillna(0)
+    df_acum['Acumulo'] = df_acum['Receitas'] - df_acum['Despesas']
+    df_acum['Acumulo'] = df_acum['Acumulo'].cumsum()
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(name='Fluxo de Caixa', x = df_acum.index,
+    y = df_acum['Acumulo'], mode='lines'))
+
+    fig.update_layout(margin=graph_margin, height=400)
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+
+    return fig
+    
+    
