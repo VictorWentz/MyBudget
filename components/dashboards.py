@@ -1,3 +1,4 @@
+from multiprocessing.managers import BaseManager
 from dash import html, dcc
 from dash.dependencies import Input, Output, State
 from datetime import date, datetime, timedelta
@@ -9,6 +10,7 @@ import plotly.graph_objects as go
 import calendar
 # from globals import *
 from app import app
+
 
 card_icon = {
     'color': 'white',
@@ -207,5 +209,83 @@ def update_graph_line(data_despesa, data_receitas, cat_despesa, cat_receita):
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
 
     return fig
+
+
+@app.callback(
+    Output('graph-time-dash', 'figure'),
+    [
+        Input('store-receitas', 'data'),
+        Input('store-despesas', 'data'),
+        Input('dropdown-receita', 'value'),
+        Input('dropdown-despesa', 'value'),
+        Input('date-picker-config', 'start_date'),
+        Input('date-picker-config', 'end_date')
+    ]
+)
+def update_graph_time(data_receita, data_despesa, drop_receita, drop_despesa, start_date, end_date):
     
+    df_receita = pd.DataFrame(data_receita)
+    df_despesa = pd.DataFrame(data_despesa)
+
+    df_receita['Output'] = 'Receita'
+    df_despesa['Output'] = 'Despesa'
     
+    df_final = pd.concat([df_receita, df_despesa])
+    df_final['Data'] = pd.to_datetime(df_final['Data'])
+
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+
+
+    df_final = df_final[(df_final['Data'] >= start_date) & (df_final['Data'] <= end_date)]
+    df_final = df_final[(df_final['Categoria'].isin(drop_receita)) | (df_final['Categoria'].isin(drop_despesa))]
+
+    fig = px.bar(df_final, x='Data', y='Valor', color='Output', barmode='group')
+
+    fig.update_layout(margin=graph_margin, height=350)
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+
+
+
+    return fig
+
+
+@app.callback(
+    Output('graph-pie-dash-receita','figure'),
+    [
+        Input('store-receitas','data'),
+        Input('dropdown-receita', 'value')
+    ]
+)
+def update_pie_receita(data_receita, drop_receita):
+
+    df = pd.DataFrame(data_receita)
+    df = df[df['Categoria'].isin(drop_receita)]
+
+    fig = px.pie(df, values=df.Valor, names=df.Categoria, hole=.2)
+    fig.update_layout(title={'text': 'Receitas'})
+    fig.update_layout(margin = graph_margin, height=350)
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+
+    return fig
+
+
+@app.callback(
+    Output('graph-pie-dash-despesa','figure'),
+    [
+        Input('store-despesas','data'),
+        Input('dropdown-despesa', 'value')
+    ]
+)
+def update_pie_receita(data_despesa, drop_despesa):
+
+    df = pd.DataFrame(data_despesa)
+    df = df[df['Categoria'].isin(drop_despesa)]
+
+    fig = px.pie(df, values=df.Valor, names=df.Categoria, hole=.2)
+    fig.update_layout(title={'text': 'despesas'})
+    fig.update_layout(margin = graph_margin, height=350)
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+
+    return fig
+
